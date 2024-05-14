@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/ayush6624/go-chatgpt"
+	"github.com/sashabaranov/go-openai"
 	"github.com/tidwall/gjson"
 )
 
@@ -33,7 +34,8 @@ func AskGpt(message string) string {
 	res, err := client.Send(ctx, &chatgpt.ChatCompletionRequest{
 		Model: chatgpt.GPT35Turbo,
 		Messages: []chatgpt.ChatMessage{
-			{Role: chatgpt.ChatGPTModelRoleSystem,
+			{
+				Role:    chatgpt.ChatGPTModelRoleSystem,
 				Content: message,
 			},
 		},
@@ -62,4 +64,25 @@ func AskGpt(message string) string {
 	firstResponse := responses[0]
 	content := firstResponse.Message.Content
 	return content
+}
+
+func speech_to_text(filePathName string) string {
+	openai_api_key := os.Getenv("OPENAI_API_KEY")
+
+	client := openai.NewClient(openai_api_key)
+	ctx := context.Background()
+
+	req := openai.AudioRequest{
+		Model:    openai.Whisper1,
+		FilePath: filePathName,
+		Language: "es",
+	}
+
+	resp, err := client.CreateTranscription(ctx, req)
+	if err != nil {
+		fmt.Printf("Transcription error: %v\n", err)
+		return ""
+	}
+
+	return string(resp.Text)
 }

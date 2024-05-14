@@ -2,50 +2,44 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"log"
-	"net/http"
-	"net/url"
+	// "os"
+	// "context"
 
-	"github.com/gin-gonic/gin"
+	"context"
+	"os"
 
 	"github.com/joho/godotenv"
+	"github.com/sashabaranov/go-openai"
 )
 
 func main() {
 	godotenv.Load()
 
-	router := gin.Default()
+	client := openai.NewClient(os.Getenv("OPENAI_API_KEY"))
 
-	router.POST("/", func(context *gin.Context) {
-		// Aquí es donde procesarías el mensaje recibido de WhatsApp
-		// Puedes acceder al cuerpo del mensaje en context.Request.Body
-		body, err := io.ReadAll(context.Request.Body)
-		if err != nil {
-			context.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-		values, err := url.ParseQuery(string(body))
-		if err != nil {
-			context.String(http.StatusInternalServerError, err.Error())
-			return
-		}
+	req := openai.ChatCompletionRequest{
+		Model: openai.GPT3Dot5Turbo,
+		Messages: []openai.ChatCompletionMessage{
+			{
+				Role:    openai.ChatMessageRoleSystem,
+				Content: "Eres un asistente virtual, todo lo que te pregunten, tienes que contestar en espanol mexicano",
+			},
+		},
+	}
 
-		// Extraer el valor del cuerpo del mensaje
-		messageBody := values.Get("Body")
-		answer := AskGpt(messageBody)
-		fmt.Println("MENSAJE: " + messageBody)
-		// Procesar el cuerpo del mensaje
-		fmt.Println("Mensaje de WhatsApp recibido:", string(body))
-		// Responder a la solicitud de ngrok
-		context.String(http.StatusOK, answer)
+	req.Messages = append(req.Messages, openai.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleUser,
+		Content: "How much is 3 times 5?",
 	})
 
-	// Iniciar el servidor en el puerto 3000
-	if err := router.Run(":8000"); err != nil {
-		log.Fatal(err)
+	resp, err := client.CreateChatCompletion(context.Background(), req)
+	if err != nil {
+		fmt.Println("There was an error")
+		return
 	}
-	//fmt.Println(AskGpt("Con quién hablo?"))
-	//whatsAppTwilio("HOLA armandoOOO")
+
+	fmt.Println(resp.Choices[0].Message.Content)
+
+	//listenMsgs()
 
 }
