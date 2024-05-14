@@ -21,12 +21,12 @@ type Response struct {
 	FinishReason string  `json:"finish_reason"`
 }
 
-func AskGpt(message string) {
+func AskGpt(message string) string {
 	openai_api_key := os.Getenv("OPENAI_API_KEY")
 	client, err := chatgpt.NewClient(openai_api_key)
 	if err != nil {
 		fmt.Println("Error creating ChatGPT client:", err)
-		return
+		return ""
 	}
 
 	ctx := context.Background()
@@ -41,13 +41,13 @@ func AskGpt(message string) {
 
 	if err != nil {
 		fmt.Println("Error sending message:", err)
-		return
+		return ""
 	}
 
 	ans, err := json.MarshalIndent(res, "", "  ")
 	if err != nil {
 		fmt.Println("Error marshalling response:", err)
-		return
+		return ""
 	}
 
 	respuesta := gjson.Get(string(ans), "choices")
@@ -61,5 +61,5 @@ func AskGpt(message string) {
 	// Access the first response and extract the "content" value
 	firstResponse := responses[0]
 	content := firstResponse.Message.Content
-	fmt.Println(content)
+	return content
 }
