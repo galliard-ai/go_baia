@@ -108,21 +108,14 @@ func listenMsgs() {
 			fmt.Println("Media URL:  " + mediaUrl)
 			textedQuestion = speech_to_text("audios/" + fileName)
 			answerFromGPT := AskGpt(textedQuestion)
-			formatedAnswer, err := formatOrder(answerFromGPT)
-			if err != nil {
-				fmt.Println("Error al formatear la orden:", err)
-				formatedAnswer = answerFromGPT
-			}
+			formatedAnswer := formatGPTResponse(answerFromGPT)
+
 			finalAnswer = formatedAnswer
 
 		} else {
 			answerFromGPT := AskGpt(messageBody)
-			formattedAnswer, err := formatOrder(answerFromGPT)
-			if err != nil {
-				finalAnswer = answerFromGPT
-			} else {
-				finalAnswer = formattedAnswer
-			}
+			finalAnswer = formatGPTResponse(answerFromGPT)
+
 			fmt.Println("MENSAJE: " + finalAnswer)
 		}
 
