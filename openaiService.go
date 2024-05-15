@@ -2,13 +2,10 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 
-	"github.com/ayush6624/go-chatgpt"
 	"github.com/sashabaranov/go-openai"
-	"github.com/tidwall/gjson"
 )
 
 type Message struct {
@@ -22,48 +19,23 @@ type Response struct {
 	FinishReason string  `json:"finish_reason"`
 }
 
-func AskGpt(message string) string {
-	openai_api_key := os.Getenv("OPENAI_API_KEY")
-	client, err := chatgpt.NewClient(openai_api_key)
-	if err != nil {
-		fmt.Println("Error creating ChatGPT client:", err)
-		return ""
-	}
+var req openai.ChatCompletionRequest
 
-	ctx := context.Background()
-	res, err := client.Send(ctx, &chatgpt.ChatCompletionRequest{
-		Model: chatgpt.GPT35Turbo,
-		Messages: []chatgpt.ChatMessage{
-			{
-				Role:    chatgpt.ChatGPTModelRoleSystem,
-				Content: message,
-			},
-		},
+func AskGpt(message string) string {
+	client := openai.NewClient(os.Getenv("OPENAI_API_KEY"))
+
+	req.Messages = append(req.Messages, openai.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleUser,
+		Content: message,
 	})
 
+	resp, err := client.CreateChatCompletion(context.Background(), req)
 	if err != nil {
-		fmt.Println("Error sending message:", err)
+		fmt.Println("There was an error")
 		return ""
 	}
 
-	ans, err := json.MarshalIndent(res, "", "  ")
-	if err != nil {
-		fmt.Println("Error marshalling response:", err)
-		return ""
-	}
-
-	respuesta := gjson.Get(string(ans), "choices")
-	//fmt.Println(respuesta)
-	var responses []Response
-	errorr := json.Unmarshal([]byte(respuesta.String()), &responses)
-	if errorr != nil {
-		panic(errorr)
-	}
-
-	// Access the first response and extract the "content" value
-	firstResponse := responses[0]
-	content := firstResponse.Message.Content
-	return content
+	return resp.Choices[0].Message.Content
 }
 
 func speech_to_text(filePathName string) string {

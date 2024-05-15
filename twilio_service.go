@@ -90,34 +90,46 @@ func listenMsgs() {
 			context.String(http.StatusInternalServerError, err.Error())
 			return
 		}
-		var answer string
+		var finalAnswer string
 		// Extraer el valor del cuerpo del mensaje
 		messageBody := values.Get("Body")
 		contentType := values.Get("MediaContentType0")
 		mediaUrl := values.Get("MediaUrl0")
-		var question string
+		var textedQuestion string
 		fmt.Println("contentType " + contentType)
 
 		if contentType == "audio/ogg" {
 			if err := downloadFile(mediaUrl, "audios/"+fileName); err != nil {
 				fmt.Println("Error al descargar el archivo:", err)
-				answer = "Error al descargar el archivo de audio"
+				finalAnswer = "Error al descargar el archivo de audio"
 			} else {
-				question = speech_to_text("audios/" + fileName)
+				textedQuestion = speech_to_text("audios/" + fileName)
 			}
 			fmt.Println("Media URL:  " + mediaUrl)
-			question = speech_to_text("audios/" + fileName)
-			answer = AskGpt(question)
+			textedQuestion = speech_to_text("audios/" + fileName)
+			answerFromGPT := AskGpt(textedQuestion)
+			formatedAnswer, err := formatOrder(answerFromGPT)
+			if err != nil {
+				fmt.Println("Error al formatear la orden:", err)
+				formatedAnswer = answerFromGPT
+			}
+			finalAnswer = formatedAnswer
 
 		} else {
-			answer = AskGpt(messageBody)
-			fmt.Println("MENSAJE: " + messageBody)
+			answerFromGPT := AskGpt(messageBody)
+			formattedAnswer, err := formatOrder(answerFromGPT)
+			if err != nil {
+				finalAnswer = answerFromGPT
+			} else {
+				finalAnswer = formattedAnswer
+			}
+			fmt.Println("MENSAJE: " + finalAnswer)
 		}
 
 		// Procesar el cuerpo del mensaje
 		fmt.Println("Mensaje de WhatsApp recibido:", string(body))
 		// Responder a la solicitud de ngrok
-		context.String(http.StatusOK, answer)
+		context.String(http.StatusOK, finalAnswer)
 	})
 
 	// Iniciar el servidor en el puerto 3000

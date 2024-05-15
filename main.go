@@ -2,11 +2,7 @@ package main
 
 import (
 	"fmt"
-	// "os"
-	// "context"
-
-	"context"
-	"os"
+	"io/ioutil"
 
 	"github.com/joho/godotenv"
 	"github.com/sashabaranov/go-openai"
@@ -15,31 +11,31 @@ import (
 func main() {
 	godotenv.Load()
 
-	client := openai.NewClient(os.Getenv("OPENAI_API_KEY"))
+	jsonMenuData, err := ioutil.ReadFile("jsons/menu.json")
+	if err != nil {
+		fmt.Println("Error at parsing menu json")
+	}
 
-	req := openai.ChatCompletionRequest{
-		Model: openai.GPT3Dot5Turbo,
+	jsonOrdersData, err := ioutil.ReadFile("jsons/orders/order.json")
+	if err != nil {
+		fmt.Println("Error at parsing order json")
+	}
+	req = openai.ChatCompletionRequest{
+		Model: openai.GPT4o,
 		Messages: []openai.ChatCompletionMessage{
 			{
-				Role:    openai.ChatMessageRoleSystem,
-				Content: "Eres un asistente virtual, todo lo que te pregunten, tienes que contestar en espanol mexicano",
+				Role: openai.ChatMessageRoleSystem,
+				Content: `Eres un útil asistente de un restaurante diseñado para leer pedidos, compararlos con el menú "
+							  y generar el pedido en formato JSON, asegúrate de que cada platillo de la orden del cliente
+							  tenga los campos 'id', 'nombre_platillo', 'precio_por_cada_uno' y 'cantidad', debes devolver
+							  un JSON con el siguiente formato: ` + string(jsonOrdersData) + ` si el usuario no ordena nada,
+							  regresa el JSON vacío. Cuando vayas a mandar el menu, asegurate de que en tu respuesta solo venga
+							  el json y ninguna palabra mas ni menos, tampoco lo formates, es decir no pongas backticks ni nada, solo el json.
+							  En el caso de que te hagan una pregunta si responde normalmente, pero si vas a mandar la orden, mandas la orden solita. Menu: ` + string(jsonMenuData),
 			},
 		},
 	}
 
-	req.Messages = append(req.Messages, openai.ChatCompletionMessage{
-		Role:    openai.ChatMessageRoleUser,
-		Content: "How much is 3 times 5?",
-	})
-
-	resp, err := client.CreateChatCompletion(context.Background(), req)
-	if err != nil {
-		fmt.Println("There was an error")
-		return
-	}
-
-	fmt.Println(resp.Choices[0].Message.Content)
-
-	//listenMsgs()
+	listenMsgs()
 
 }
