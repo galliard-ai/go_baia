@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"encoding/json"
@@ -17,7 +17,7 @@ type Orden struct {
 	Orden []Platillo `json:"orden"`
 }
 
-func formatGPTResponse(text string) string {
+func FormatGPTResponse(text string) string {
 
 	if strings.Contains(text, "json") {
 
@@ -33,7 +33,8 @@ func formatGPTResponse(text string) string {
 			if err != nil {
 				return text
 			}
-			return jsonSubstring[0] + "\n \n" + formatedJson + "\n \n" + strings.TrimSpace(strings.Replace(jsonSubstring2[1], "}", "", -1))
+			formatedText := jsonSubstring[0] + "\n \n" + "> " + formatedJson + "\n \n" + strings.TrimSpace(strings.Replace(jsonSubstring2[1], "}", "", -1))
+			return strings.Replace(formatedText, "`", "", -1)
 		}
 		return text
 	}

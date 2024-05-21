@@ -1,6 +1,8 @@
-package main
+package twilioService
 
 import (
+	myOpenAi "baia_service/openai"
+	"baia_service/utils"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -69,7 +71,7 @@ func whatsAppTwilio(message string) {
 
 }
 
-func listenMsgs() {
+func ListenMsgs() {
 
 	router := gin.Default()
 
@@ -103,22 +105,20 @@ func listenMsgs() {
 				fmt.Println("Error al descargar el archivo:", err)
 				finalAnswer = "Error al descargar el archivo de audio"
 			} else {
-				textedQuestion = speech_to_text("audios/" + fileName)
+				textedQuestion = myOpenAi.Speech_to_text("audios/" + fileName)
 			}
 			fmt.Println("Media URL:  " + mediaUrl)
-			textedQuestion = speech_to_text("audios/" + fileName)
-			answerFromGPT := AskGpt(textedQuestion)
-			formatedAnswer := formatGPTResponse(answerFromGPT)
+			textedQuestion = myOpenAi.Speech_to_text("audios/" + fileName)
+			answerFromGPT := myOpenAi.AskGpt(textedQuestion)
+			formatedAnswer := utils.FormatGPTResponse(answerFromGPT)
 
 			finalAnswer = formatedAnswer
 
 		} else {
-			answerFromGPT := AskGpt(messageBody)
-			finalAnswer = formatGPTResponse(answerFromGPT)
-
+			answerFromGPT := myOpenAi.AskGpt(messageBody)
+			finalAnswer = utils.FormatGPTResponse(answerFromGPT)
 			fmt.Println("MENSAJE: " + finalAnswer)
 		}
-
 		// Procesar el cuerpo del mensaje
 		fmt.Println("Mensaje de WhatsApp recibido:", string(body))
 		// Responder a la solicitud de ngrok

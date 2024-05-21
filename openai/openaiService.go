@@ -1,4 +1,4 @@
-package main
+package myOpenAi
 
 import (
 	"context"
@@ -19,17 +19,17 @@ type Response struct {
 	FinishReason string  `json:"finish_reason"`
 }
 
-var req openai.ChatCompletionRequest
+var Req openai.ChatCompletionRequest
 
 func AskGpt(message string) string {
 	client := openai.NewClient(os.Getenv("OPENAI_API_KEY"))
 
-	req.Messages = append(req.Messages, openai.ChatCompletionMessage{
+	Req.Messages = append(Req.Messages, openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleUser,
 		Content: message,
 	})
 
-	resp, err := client.CreateChatCompletion(context.Background(), req)
+	resp, err := client.CreateChatCompletion(context.Background(), Req)
 	if err != nil {
 		fmt.Println("There was an error")
 		return ""
@@ -38,7 +38,7 @@ func AskGpt(message string) string {
 	return resp.Choices[0].Message.Content
 }
 
-func speech_to_text(filePathName string) string {
+func Speech_to_text(filePathName string) string {
 	openai_api_key := os.Getenv("OPENAI_API_KEY")
 
 	client := openai.NewClient(openai_api_key)
