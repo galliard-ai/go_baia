@@ -2,13 +2,30 @@ package main
 
 import (
 	myOpenAi "baia_service/openai"
-	twilioService "baia_service/twilio"
 	"fmt"
 	"io/ioutil"
 
+	"baia_service/utils"
+	"context"
+	"net/http"
+
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/danielgtaylor/huma/v2/adapters/humachi"
+	"github.com/danielgtaylor/huma/v2/humacli"
+	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 	"github.com/sashabaranov/go-openai"
 )
+
+type Options struct {
+	port int `help:"Port to listen on" short:"p" default:"8888"`
+}
+
+type GPTResponse struct {
+	Body struct {
+		Answer string `json:answer`
+	}
+}
 
 func main() {
 	godotenv.Load()
@@ -33,11 +50,37 @@ func main() {
 						  un JSON con el siguiente formato: ` + string(jsonOrdersData) + ` si el usuario no ordena nada,
 						  regresa el JSON vacío. Menu: ` + string(jsonMenuData) + `Se muy amigable, recuerda que nos puedes
 						  ayudar a conseguir mas clientes si les caes bien, y no pongas tanto texto, se amable pero conciso
-						  al mismo tiempo.`,
+						  al mismo tiempo. Si te saludan en ingles, respondes todo en ingles`,
 			},
 		},
 	}
 
-	twilioService.ListenMsgs()
+	cli := humacli.New(func(hook humacli.Hooks, options *Options) {
+		router := chi.NewMux()
+		api := humachi.New(router, huma.DefaultConfig("My First API", "1.0.0"))
 
+		hook.OnStart(func() {
+			fmt.Printf("Starting server on port %d...\n", 8888)
+			http.ListenAndServe(fmt.Sprintf(":%d", 8888), router)
+		})
+
+		huma.Register(api, huma.Operation{
+			OperationID:   "ask-about-order",
+			Method:        http.MethodGet,
+			Path:          "/baia/{question}",
+			Summary:       "Answers about your order",
+			Tags:          []string{"BAIA"},
+			DefaultStatus: http.StatusCreated,
+		}, func(ctx context.Context, input *struct {
+			Question string `path:"question" example:"Hola"`
+		}) (*GPTResponse, error) {
+
+			response := GPTResponse{}
+			response.Body.Answer = utils.SendRequest(input.Question)
+
+			return &response, nil
+		})
+	})
+
+	cli.Run()
 }

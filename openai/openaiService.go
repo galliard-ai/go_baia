@@ -22,6 +22,7 @@ type Response struct {
 var Req openai.ChatCompletionRequest
 
 func AskGpt(message string) string {
+
 	client := openai.NewClient(os.Getenv("OPENAI_API_KEY"))
 
 	Req.Messages = append(Req.Messages, openai.ChatCompletionMessage{
@@ -31,7 +32,7 @@ func AskGpt(message string) string {
 
 	resp, err := client.CreateChatCompletion(context.Background(), Req)
 	if err != nil {
-		fmt.Println("There was an error")
+		fmt.Println("There was an error" + err.Error())
 		return ""
 	}
 

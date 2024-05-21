@@ -1,6 +1,7 @@
 package utils
 
 import (
+	myOpenAi "baia_service/openai"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -15,6 +16,19 @@ type Platillo struct {
 
 type Orden struct {
 	Orden []Platillo `json:"orden"`
+}
+
+func SendRequest(sentMessage string) string {
+
+	var finalAnswer string
+	// Extraer el valor del cuerpo del mensaje
+
+	answerFromGPT := myOpenAi.AskGpt(sentMessage)
+	finalAnswer = FormatGPTResponse(answerFromGPT)
+
+	// Procesar el cuerpo del mensaje
+	// Responder a la solicitud de ngrok
+	return finalAnswer
 }
 
 func FormatGPTResponse(text string) string {
