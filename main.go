@@ -40,7 +40,7 @@ func main() {
 		fmt.Println("Error at parsing order json")
 	}
 	myOpenAi.Req = openai.ChatCompletionRequest{
-		Model: openai.GPT4o,
+		Model: openai.GPT3Dot5Turbo,
 		Messages: []openai.ChatCompletionMessage{
 			{
 				Role: openai.ChatMessageRoleSystem,
