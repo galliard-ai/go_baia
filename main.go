@@ -2,10 +2,12 @@ package main
 
 import (
 	myOpenAi "baia_service/openai"
+	"baia_service/utils"
 	"fmt"
 	"io/ioutil"
+	"time"
 
-	"baia_service/utils"
+	// 	"baia_service/utils"
 	"context"
 	"net/http"
 
@@ -27,6 +29,36 @@ type GPTResponse struct {
 	}
 }
 
+func requestLogger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
+		// Obtener la dirección IP del cliente
+		clientIP := r.RemoteAddr
+		if ip := r.Header.Get("X-Real-IP"); ip != "" {
+			clientIP = ip
+		} else if ip := r.Header.Get("X-Forwarded-For"); ip != "" {
+			clientIP = ip
+		}
+
+		// Imprimir detalles de la solicitud
+		fmt.Println("\n- - - - - - - INCOMING REQUEST - - - - - - - -\n")
+		fmt.Printf("Received request: %s %s\n", r.Method, r.URL.Path)
+		fmt.Printf("Client IP: %s\n", clientIP)
+		fmt.Printf("User Agent: %s\n", r.UserAgent())
+		fmt.Printf("Headers:\n")
+		for name, values := range r.Header {
+			for _, value := range values {
+				fmt.Printf("  %s: %s\n", name, value)
+			}
+		}
+
+		next.ServeHTTP(w, r)
+
+		fmt.Printf("Completed request: %s %s in %v\n", r.Method, r.URL.Path, time.Since(start))
+	})
+}
+
 func main() {
 	godotenv.Load()
 
@@ -40,7 +72,7 @@ func main() {
 		fmt.Println("Error at parsing order json")
 	}
 	myOpenAi.Req = openai.ChatCompletionRequest{
-		Model: openai.GPT4o,
+		Model: openai.GPT3Dot5Turbo,
 		Messages: []openai.ChatCompletionMessage{
 			{
 				Role: openai.ChatMessageRoleSystem,
@@ -50,13 +82,14 @@ func main() {
 						  un JSON con el siguiente formato: ` + string(jsonOrdersData) + ` si el usuario no ordena nada,
 						  regresa el JSON vacío. Menu: ` + string(jsonMenuData) + `Se muy amigable, recuerda que nos puedes
 						  ayudar a conseguir mas clientes si les caes bien, y no pongas tanto texto, se amable pero conciso
-						  al mismo tiempo. Si te saludan en ingles, respondes todo en ingles`,
+						  al mismo tiempo. Responde siempre en español`,
 			},
 		},
 	}
 
 	cli := humacli.New(func(hook humacli.Hooks, options *Options) {
 		router := chi.NewMux()
+		// router.Use(requestLogger)
 		api := humachi.New(router, huma.DefaultConfig("My First API", "1.0.0"))
 
 		hook.OnStart(func() {
@@ -66,18 +99,21 @@ func main() {
 
 		huma.Register(api, huma.Operation{
 			OperationID:   "ask-about-order",
-			Method:        http.MethodGet,
-			Path:          "/baia/{question}",
+			Method:        http.MethodPost, // Change to POST
+			Path:          "/baia/askGPT/{question}",
 			Summary:       "Answers about your order",
 			Tags:          []string{"BAIA"},
 			DefaultStatus: http.StatusCreated,
 		}, func(ctx context.Context, input *struct {
-			Question string `path:"question" example:"Hola"`
+			Body *struct {
+				Question string `json:"question" example:"Hola"`
+			}
 		}) (*GPTResponse, error) {
 
 			response := GPTResponse{}
-			response.Body.Answer = utils.SendRequest(input.Question)
 
+			response.Body.Answer = utils.SendRequest(input.Body.Question)
+			fmt.Println(input.Body.Question)
 			return &response, nil
 		})
 	})
