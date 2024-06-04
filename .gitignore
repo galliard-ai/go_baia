@@ -1,5 +1,5 @@
 
 .env
 
-jsMiddleware/.wwebjs_auth/session
-jsMiddleware/node_modules
+/jsMiddleware/.wwebjs_auth/session
+/jsMiddleware/node_modules
