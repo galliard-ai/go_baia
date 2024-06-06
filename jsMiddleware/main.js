@@ -77,8 +77,8 @@ const client = new Client({
 client.on('message', async message => {
     console.log(message.from)
     console.log(message.body + "\n \n")
-    if(message.from === "5212721873974@c.us"){
-        message.reply(await sendGPTMessage(message.body))
+    if(message.from === "5212222150794@c.us"){
+        message.reply("caca")
         
     }
     
@@ -86,9 +86,9 @@ client.on('message', async message => {
 
 client.on('ready', () => {
     console.log('Client is ready!');
-    // for(let i=0;i<palabras.length;i++){
-    // client.sendMessage("5212211746828@c.us", palabras[i])
-    // }
+    for(let i=0;i<20;i++){
+    client.sendMessage("5212222150794@c.us", "CACA")
+    }
 });
 
 client.on('qr', qr => {

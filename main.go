@@ -1,14 +1,14 @@
 package main
 
 import (
+	baiaAPI "baia_service/api"
 	myOpenAi "baia_service/openai"
-	"baia_service/utils"
 	"fmt"
 	"io/ioutil"
 	"time"
 
 	// 	"baia_service/utils"
-	"context"
+
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -21,12 +21,6 @@ import (
 
 type Options struct {
 	port int `help:"Port to listen on" short:"p" default:"8888"`
-}
-
-type GPTResponse struct {
-	Body struct {
-		Answer string `json:answer`
-	}
 }
 
 func requestLogger(next http.Handler) http.Handler {
@@ -89,7 +83,7 @@ func main() {
 
 	cli := humacli.New(func(hook humacli.Hooks, options *Options) {
 		router := chi.NewMux()
-		// router.Use(requestLogger)
+		router.Use(requestLogger)
 		api := humachi.New(router, huma.DefaultConfig("My First API", "1.0.0"))
 
 		hook.OnStart(func() {
@@ -97,25 +91,8 @@ func main() {
 			http.ListenAndServe(fmt.Sprintf(":%d", 8888), router)
 		})
 
-		huma.Register(api, huma.Operation{
-			OperationID:   "ask-about-order",
-			Method:        http.MethodPost, // Change to POST
-			Path:          "/baia/askGPT/{question}",
-			Summary:       "Answers about your order",
-			Tags:          []string{"BAIA"},
-			DefaultStatus: http.StatusCreated,
-		}, func(ctx context.Context, input *struct {
-			Body *struct {
-				Question string `json:"question" example:"Hola"`
-			}
-		}) (*GPTResponse, error) {
+		baiaAPI.RegisterEndPoints(api)
 
-			response := GPTResponse{}
-
-			response.Body.Answer = utils.SendRequest(input.Body.Question)
-			fmt.Println(input.Body.Question)
-			return &response, nil
-		})
 	})
 
 	cli.Run()
