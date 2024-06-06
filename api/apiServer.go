@@ -1,6 +1,7 @@
 package baiaAPI
 
 import (
+	myOpenAi "baia_service/openai"
 	"baia_service/utils"
 	"context"
 	"fmt"
@@ -63,7 +64,7 @@ func RegisterEndPoints(api huma.API) {
 		DefaultStatus: http.StatusCreated,
 	}, func(ctx context.Context, input *struct {
 		RawBody multipart.Form
-	}) (*UploadResponse, error) {
+	}) (*GPTResponse, error) {
 		if err := os.MkdirAll("audios", os.ModePerm); err != nil {
 			return nil, huma.NewError(http.StatusInternalServerError, "Error creating 'audios' directory", err)
 		}
@@ -79,7 +80,7 @@ func RegisterEndPoints(api huma.API) {
 		}
 		defer file.Close()
 
-		dst, err := os.Create(filepath.Join("audios", fileHeaders[0].Filename))
+		dst, err := os.Create(filepath.Join("audios/apiAudios", fileHeaders[0].Filename))
 		if err != nil {
 			return nil, huma.NewError(http.StatusInternalServerError, "Error creating file on server", err)
 		}
@@ -89,8 +90,13 @@ func RegisterEndPoints(api huma.API) {
 		if err != nil {
 			return nil, huma.NewError(http.StatusInternalServerError, "Error saving file to server", err)
 		}
-		response := UploadResponse{}
-		response.Body.Message = "Succesfull"
+
+		audioPath := "audios/apiAudios/" + fileHeaders[0].Filename
+		translatedText := myOpenAi.Speech_to_text(audioPath)
+		answerFromGPT := myOpenAi.AskGpt(translatedText)
+		formatedAnswer := utils.FormatGPTResponse(answerFromGPT)
+		response := GPTResponse{}
+		response.Body.Answer = formatedAnswer
 
 		return &response, nil
 	})
