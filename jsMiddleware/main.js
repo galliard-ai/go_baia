@@ -35,11 +35,11 @@ const FormData = require('form-data');
     } catch (error) {
         return "catched Error" + error.toString()
         console.log("Error uploading file:", error.message);
-    }
+          }
 }
 
   async function sendGPTMessage(mensaje) {
-    const response = await fetch("http://localhost:8888/baia/askGPT/question", {
+    const response = await fetch("http://localhost:8888/baia/askGPT/text/question", {
         method: 'POST',
         body: JSON.stringify({ // Convert data to JSON string
             "question": mensaje
@@ -54,7 +54,7 @@ const FormData = require('form-data');
         return "Hubo un error"
     } else {
         const responseData = await response.json(); // Parse JSON response
-        console.log(responseData.toString()); 
+        console.log(responseData.toString());
         return responseData["Answer"] // Print the parsed JSON data
     }
 }
@@ -71,8 +71,10 @@ const client = new Client({
 
 client.on('message', async message => {
     console.log(message.from)
-    console.log(message.body + "\n \n")
-    if(message.hasMedia && message.from === "5212228613251@c.us"){
+    if(message.from === "5212721976963@c.us"){
+              console.log(message.body)
+        console.log(message.from)
+      if(message.hasMedia){
         console.log(message.hasMedia)
         const msgmedia =  await message.downloadMedia()
         console.log(msgmedia.filename)
@@ -93,16 +95,19 @@ client.on('message', async message => {
         message.reply(answer)
         mediaContador++
 
-    }
+    } else {
+        message.reply(await sendGPTMessage(message.body))
+        }
+        }
     if(message.body === "!ping"){
         message.reply("pong")
     }
-    
+
 });
 
 client.on('ready', () => {
     console.log('Client is ready!');
-    
+
 });
 
 client.on('qr', qr => {
