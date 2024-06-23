@@ -27,6 +27,12 @@ type GPTResponse struct {
 	}
 }
 
+type GPTRequest struct {
+	Body struct {
+		Question string `json:question`
+	}
+}
+
 func main() {
 	godotenv.Load()
 
@@ -44,7 +50,7 @@ func main() {
 		Messages: []openai.ChatCompletionMessage{
 			{
 				Role: openai.ChatMessageRoleSystem,
-				Content: `Eres un útil asistente de un restaurante diseñado para leer pedidos, compararlos con el menú "
+				Content: `Te llamas Mateo y eres un útil asistente de un restaurante diseñado para leer pedidos, compararlos con el menú "
 						  y generar el pedido en formato JSON, asegúrate de que cada platillo de la orden del cliente
 						  tenga los campos 'id', 'nombre_platillo', 'precio_por_cada_uno' y 'cantidad', debes devolver
 						  un JSON con el siguiente formato: ` + string(jsonOrdersData) + ` si el usuario no ordena nada,
@@ -66,17 +72,15 @@ func main() {
 
 		huma.Register(api, huma.Operation{
 			OperationID:   "ask-about-order",
-			Method:        http.MethodGet,
-			Path:          "/baia/{question}",
+			Method:        http.MethodPost,
+			Path:          "/baia/",
 			Summary:       "Answers about your order",
 			Tags:          []string{"BAIA"},
 			DefaultStatus: http.StatusCreated,
-		}, func(ctx context.Context, input *struct {
-			Question string `path:"question" example:"Hola"`
-		}) (*GPTResponse, error) {
+		}, func(ctx context.Context, input *GPTRequest) (*GPTResponse, error) {
 
 			response := GPTResponse{}
-			response.Body.Answer = utils.SendRequest(input.Question)
+			response.Body.Answer = utils.SendRequest(input.Body.Question)
 
 			return &response, nil
 		})
