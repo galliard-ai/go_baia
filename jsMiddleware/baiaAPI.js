@@ -23,7 +23,7 @@ export default async function sendGPTAudio(filePath) {
             console.log("Response data:", response.data);
             return "Error fetching"
         } else {
-            console.log("File uploaded successfully");
+            console.log("File uploaded succsfully");
             console.log("Response data:", response.data);
             return response.data["Answer"]
         }
