@@ -11,7 +11,7 @@ const client = new Client({
     authStrategy: new LocalAuth()
 });
 
-async function sendGPTAudio(filePath) {
+async function sendGPTAudio(filePath, senderID) {
     if (!fs.existsSync(filePath)) {
         console.log("Archivo no encontrado:", filePath);
         return;
@@ -19,6 +19,7 @@ async function sendGPTAudio(filePath) {
 
     const formData = new FormData();
     formData.append('audio', fs.createReadStream(filePath));
+    formData.append('senderID', senderID); // Agrega senderID directamente al formData
 
     try {
         const response = await axios.post("http://localhost:8888/baia/askGPT/audio/", formData, {
@@ -26,20 +27,22 @@ async function sendGPTAudio(filePath) {
                 ...formData.getHeaders()
             }
         });
+
         if (response.status !== 201) {
             console.log("Error fetching:", response.statusText);
             console.log("Response data:", response.data);
-            return "Error fetching"
+            return "Error fetching";
         } else {
             console.log("File uploaded successfully");
             console.log("Response data:", response.data);
-            return response.data["Answer"]
+            return response.data["Answer"];
         }
     } catch (error) {
         console.log("Error uploading file:", error.message);
-        return "catched Error" + error.toString()
+        return "catched Error: " + error.toString();
     }
 }
+
 
 async function sendGPTMessage(mensaje, senderID) {
     const response = await fetch("http://localhost:8888/baia/askGPT/text/question", {
@@ -85,7 +88,7 @@ client.on('message', async message => {
           );
           const oggAudioPath = `../audios/mediaInOgg/audio${mediaContador}.ogg`
           fs.writeFileSync(oggAudioPath, Buffer.from(msgmedia.data.replace(`data:audio/ogg; codecs=opus;base64,`, ''), 'base64'));
-        var answer = await sendGPTAudio(oggAudioPath)
+        var answer = await sendGPTAudio(oggAudioPath, message.from)
         message.reply(answer)
         mediaContador++
 

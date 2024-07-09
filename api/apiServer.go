@@ -71,8 +71,20 @@ func RegisterEndPoints(api huma.API, fbClient *firestore.Client) {
 		Tags:          []string{"BAIAudio"},
 		DefaultStatus: http.StatusCreated,
 	}, func(ctx context.Context, input *struct {
+		// No Body, expecting multipart.Form directly
 		RawBody multipart.Form
 	}) (*GPTResponse, error) {
+		// Verificar input.RawBody
+		if input.RawBody.File == nil {
+			return nil, huma.NewError(http.StatusBadRequest, "Request raw body is nil or does not contain files")
+		}
+
+		// Extract senderID from the form values
+		senderID := input.RawBody.Value["senderID"]
+		if len(senderID) == 0 {
+			return nil, huma.NewError(http.StatusBadRequest, "Sender ID is missing")
+		}
+
 		if err := os.MkdirAll("audios", os.ModePerm); err != nil {
 			return nil, huma.NewError(http.StatusInternalServerError, "Error creating 'audios' directory", err)
 		}
@@ -101,8 +113,16 @@ func RegisterEndPoints(api huma.API, fbClient *firestore.Client) {
 
 		audioPath := "audios/apiAudios/" + fileHeaders[0].Filename
 		translatedText := myOpenAi.Speech_to_text(audioPath)
+
+		// Verificar fbClient
+		if fbClient == nil {
+			return nil, huma.NewError(http.StatusInternalServerError, "Firebase client is nil")
+		}
+
+		firebaseService.SaveUserMessage(translatedText, senderID[0], fbClient) // Use senderID from form values
 		answerFromGPT := myOpenAi.AskGpt(translatedText)
 		formatedAnswer := utils.FormatGPTResponse(answerFromGPT)
+		firebaseService.SaveBAIAMessage(formatedAnswer, senderID[0], fbClient)
 		response := GPTResponse{}
 		response.Body.Answer = formatedAnswer
 

@@ -65,7 +65,7 @@ func SaveBAIAMessage(message string, senderID string, client *firestore.Client) 
 	ref := ref1.Collection("Conversation").Doc(fmt.Sprintf("#%v response", messageNumber))
 	result, err := ref.Set(ctx, map[string]interface{}{
 		"Message":       message,
-		"isUserMessage": true,
+		"isUserMessage": false,
 	})
 	if err != nil {
 		log.Fatalln(err)
@@ -81,7 +81,7 @@ func SaveUserMessage(message string, senderID string, client *firestore.Client) 
 	ref := ref1.Collection("Conversation").Doc(fmt.Sprintf("#%v message", messageNumber))
 	result, err := ref.Set(ctx, map[string]interface{}{
 		"Message":       message,
-		"isUserMessage": false,
+		"isUserMessage": true,
 	})
 	if err != nil {
 		log.Fatalln(err)
