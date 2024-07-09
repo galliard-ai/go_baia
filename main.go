@@ -2,6 +2,7 @@ package main
 
 import (
 	baiaAPI "baia_service/api"
+	firebaseService "baia_service/firebase"
 	myOpenAi "baia_service/openai"
 	"fmt"
 	"io/ioutil"
@@ -68,6 +69,11 @@ type GPTRequest struct {
 func main() {
 	godotenv.Load()
 
+	fbClient, err := firebaseService.InitFirebase()
+	if err != nil {
+		fmt.Println("Error initializing Firebase")
+	}
+
 	jsonMenuData, err := ioutil.ReadFile("jsons/menu.json")
 	if err != nil {
 		fmt.Println("Error at parsing menu json")
@@ -102,21 +108,8 @@ func main() {
 			fmt.Printf("Starting server on port %d...\n", 8888)
 			http.ListenAndServe(fmt.Sprintf(":%d", 8888), router)
 		})
-		baiaAPI.RegisterEndPoints(api)
-		// huma.Register(api, huma.Operation{
-		// 	OperationID:   "ask-about-order",
-		// 	Method:        http.MethodPost,
-		// 	Path:          "/baia/",
-		// 	Summary:       "Answers about your order",
-		// 	Tags:          []string{"BAIA"},
-		// 	DefaultStatus: http.StatusCreated,
-		// }, func(ctx context.Context, input *GPTRequest) (*GPTResponse, error) {
+		baiaAPI.RegisterEndPoints(api, fbClient)
 
-		// 	response := GPTResponse{}
-		// 	response.Body.Answer = utils.SendRequest(input.Body.Question)
-
-		// 	return &response, nil
-		// })
 	})
 
 	cli.Run()

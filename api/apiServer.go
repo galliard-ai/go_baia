@@ -1,6 +1,7 @@
 package baiaAPI
 
 import (
+	firebaseService "baia_service/firebase"
 	myOpenAi "baia_service/openai"
 	"baia_service/utils"
 	"context"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"cloud.google.com/go/firestore"
 	"github.com/danielgtaylor/huma/v2"
 )
 
@@ -33,7 +35,7 @@ type uploadFileRequest struct {
 	RawBody multipart.Form
 }
 
-func RegisterEndPoints(api huma.API) {
+func RegisterEndPoints(api huma.API, fbClient *firestore.Client) {
 
 	huma.Register(api, huma.Operation{
 		OperationID:   "ask-about-order",
@@ -45,12 +47,18 @@ func RegisterEndPoints(api huma.API) {
 	}, func(ctx context.Context, input *struct {
 		Body *struct {
 			Question string `json:"question" example:"Hola"`
+			User     string `json:"senderID" example:"5212223201384@c.us"`
 		}
 	}) (*GPTResponse, error) {
+		firebaseService.SaveUserMessage(input.Body.Question, input.Body.User, fbClient)
 
 		response := GPTResponse{}
+		answer := utils.SendRequest(input.Body.Question)
+		response.Body.Answer = answer
 
-		response.Body.Answer = utils.SendRequest(input.Body.Question)
+		firebaseService.SaveBAIAMessage(answer, input.Body.User, fbClient)
+		fmt.Println("********** MESSAGE **********")
+		fmt.Println(input.Body.User)
 		fmt.Println(input.Body.Question)
 		return &response, nil
 	})
