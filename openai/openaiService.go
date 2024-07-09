@@ -51,6 +51,12 @@ func Speech_to_text(filePathName string) string {
 		Language: "es",
 	}
 
+	responseFormat := openai.ChatCompletionResponseFormat{
+		Type: openai.ChatCompletionResponseFormatTypeJSONObject,
+	}
+
+	Req.ResponseFormat = &responseFormat
+
 	resp, err := client.CreateTranscription(ctx, req)
 	if err != nil {
 		fmt.Printf("Transcription error: %v\n", err)
