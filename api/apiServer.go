@@ -1,7 +1,6 @@
 package baiaAPI
 
 import (
-	firebaseService "baia_service/firebase"
 	myOpenAi "baia_service/openai"
 	"baia_service/utils"
 	"context"
@@ -50,13 +49,11 @@ func RegisterEndPoints(api huma.API, fbClient *firestore.Client) {
 			User     string `json:"senderID" example:"5212223201384@c.us"`
 		}
 	}) (*GPTResponse, error) {
-		firebaseService.SaveUserMessage(input.Body.Question, input.Body.User, fbClient)
 
 		response := GPTResponse{}
-		answer := utils.SendRequest(input.Body.Question)
+		answer := utils.SendRequest(input.Body.Question, input.Body.User, fbClient)
 		response.Body.Answer = answer
 
-		firebaseService.SaveBAIAMessage(answer, input.Body.User, fbClient)
 		fmt.Println("********** MESSAGE **********")
 		fmt.Println(input.Body.User)
 		fmt.Println(input.Body.Question)
@@ -119,10 +116,8 @@ func RegisterEndPoints(api huma.API, fbClient *firestore.Client) {
 			return nil, huma.NewError(http.StatusInternalServerError, "Firebase client is nil")
 		}
 
-		firebaseService.SaveUserMessage(translatedText, senderID[0], fbClient) // Use senderID from form values
-		answerFromGPT := myOpenAi.AskGpt(translatedText)
-		formatedAnswer := utils.FormatGPTResponse(answerFromGPT)
-		firebaseService.SaveBAIAMessage(formatedAnswer, senderID[0], fbClient)
+		formatedAnswer := utils.SendRequest(translatedText, senderID[0], fbClient)
+
 		response := GPTResponse{}
 		response.Body.Answer = formatedAnswer
 
